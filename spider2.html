@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aranha Perseguidora com Rastro</title>
+    <style>
+        :root {
+            --spider-color: #111;
+            --eye-color: #ff0000;
+            --trail-color: rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #696767;
+            overflow: hidden;
+            cursor: none; /* Esconde o cursor para a aranha ser o foco */
+            font-family: sans-serif;
+        }
+
+        /* Container da Aranha */
+        #spider {
+            position: fixed;
+            width: 40px;
+            height: 45px;
+            z-index: 1000;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        /* Corpo Principal */
+        .spider-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--spider-color);
+            border-radius: 50% 50% 45% 45%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Olhos */
+        .spider-body::before, .spider-body::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            width: 5px;
+            height: 7px;
+            background-color: var(--eye-color);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--eye-color);
+        }
+        .spider-body::before { left: 10px; }
+        .spider-body::after { right: 10px; }
+
+        /* Pernas da Aranha */
+        .leg {
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background-color: var(--spider-color);
+            top: 50%;
+            transform-origin: 0% 50%;
+        }
+
+        /* Lado Esquerdo */
+        .leg.left { right: 100%; }
+        .leg.l1 { transform: rotate(140deg); animation: moveLegL 0.2s infinite alternate; }
+        .leg.l2 { transform: rotate(180deg); animation: moveLegL 0.2s infinite alternate -0.05s; }
+        .leg.l3 { transform: rotate(220deg); animation: moveLegL 0.2s infinite alternate -0.1s; }
+
+        /* Lado Direito */
+        .leg.right { left: 100%; transform-origin: 0% 50%; }
+        .leg.r1 { transform: rotate(-40deg); animation: moveLegR 0.2s infinite alternate; }
+        .leg.r2 { transform: rotate(0deg); animation: moveLegR 0.2s infinite alternate -0.05s; }
+        .leg.r3 { transform: rotate(40deg); animation: moveLegR 0.2s infinite alternate -0.1s; }
+
+        @keyframes moveLegL {
+            from { transform: rotate(140deg); }
+            to { transform: rotate(200deg); }
+        }
+        @keyframes moveLegR {
+            from { transform: rotate(-20deg); }
+            to { transform: rotate(40deg); }
+        }
+
+        /* Estilo do Rastro */
+        .trail-dot {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background-color: var(--trail-color);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 500;
+            transition: transform 1s ease-out, opacity 1s ease-out;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #444;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="instructions">Mova o mouse para a aranha te seguir</div>
+
+    <div id="spider">
+        <!-- Pernas esquerdas -->
+        <div class="leg left l1"></div>
+        <div class="leg left l2"></div>
+        <div class="leg left l3"></div>
+        
+        <div class="spider-body"></div>
+        
+        <!-- Pernas direitas -->
+        <div class="leg right r1"></div>
+        <div class="leg right r2"></div>
+        <div class="leg right r3"></div>
+    </div>
+
+    <script>
+        const spider = document.getElementById('spider');
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let spiderX = mouseX;
+        let spiderY = mouseY;
+
+        const speed = 0.08; 
+        let lastTrailX = 0;
+        let lastTrailY = 0;
+
+        // Atualiza a posição do alvo (mouse)
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Função para criar o rastro
+        function createTrail(x, y) {
+            // Só cria rastro se a aranha tiver se movido o suficiente (otimização)
+            const dist = Math.hypot(x - lastTrailX, y - lastTrailY);
+            if (dist < 15) return;
+
+            const dot = document.createElement('div');
+            dot.className = 'trail-dot';
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
+            
+            document.body.appendChild(dot);
+
+            // Animação de sumiço
+            setTimeout(() => {
+                dot.style.transform = 'scale(0.1)';
+                dot.style.opacity = '0';
+            }, 50);
+
+            // Remove do DOM após a transição
+            setTimeout(() => {
+                dot.remove();
+            }, 1000);
+
+            lastTrailX = x;
+            lastTrailY = y;
+        }
+
+        function animate() {
+            // Movimento suave (Lerp)
+            spiderX += (mouseX - spiderX) * speed;
+            spiderY += (mouseY - spiderY) * speed;
+
+            // Rotação para olhar para o cursor
+            const angle = Math.atan2(mouseY - spiderY, mouseX - spiderX) * 180 / Math.PI;
+
+            // Aplicar transformações
+            // O +90 é porque o desenho original da aranha está virado para baixo
+            spider.style.transform = `translate(${spiderX - 20}px, ${spiderY - 22}px) rotate(${angle + 90}deg)`;
+
+            // Criar rastro na posição atual da aranha
+            createTrail(spiderX, spiderY);
+
+            requestAnimationFrame(animate);
+        }
+
+        // Inicia
+        animate();
+    </script>
+</body>
+</html>

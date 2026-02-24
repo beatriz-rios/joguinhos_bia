@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gato e Novelo - Física Realista</title>
+    <style>
+        :root {
+            --cat-color: #f39c12;
+            --cat-detail: #f39c12;
+            --wool-color: #e74c3c;
+            --eye-color: white;
+        }
+
+        /* Skins de Cores */
+        .skin-laranja { --cat-color: #f39c12; --cat-detail: #f39c12; --eye-color: rgb(255, 215, 36); }
+        .skin-preto { --cat-color: #2c3e50; --cat-detail: #2c3e50; --eye-color: #f1c40f; } 
+        .skin-cinza { --cat-color: #95a5a6; --cat-detail: #95a5a6; --eye-color: rgb(247, 243, 36); }
+        .skin-listrado { --cat-color: #95a5a6; --cat-detail: #7f8c8d; --eye-color: rgb(56, 165, 228); }
+        .skin-branco { --cat-color: #ffffff; --cat-detail: #e9d9d9; --eye-color: rgb(91, 153, 247); }
+        
+        /* Gato Frajola com mancha branca oval na barriga */
+        .skin-frajola { 
+            --cat-color: #222; 
+            --cat-detail: #fff; 
+            --eye-color: rgb(122, 197, 35); 
+        }
+        .skin-frajola .cat-body {
+            /* Cria uma mancha branca oval centralizada rodeada de preto */
+            background: radial-gradient(ellipse at center, #fff 35%, #222 36%) !important;
+        }
+        .skin-frajola .cat-head {
+            /* Detalhe branco no focinho */
+            background: radial-gradient(circle at center bottom, #fff 30%, #222 31%) !important;
+        }
+
+        /* Gato Tricolor com manchinhas e OLHOS AMARELOS */
+        .skin-tricolor { 
+            --cat-color: #f39c12; 
+            --cat-detail: #2c3e50; 
+            --eye-color: #f1c40f;
+        }
+        .skin-tricolor .cat-body, .skin-tricolor .cat-head {
+            background: conic-gradient(
+                #f39c12 0deg 90deg, 
+                #fff 90deg 160deg, 
+                #2c3e50 160deg 250deg, 
+                #fff 250deg 310deg,
+                #f39c12 310deg
+            ) !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #ecf0f1;
+            overflow: hidden;
+            cursor: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #wool-cursor {
+            position: fixed;
+            width: 36px;
+            height: 36px;
+            background-color: var(--wool-color);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2000;
+            box-shadow: inset -5px -5px 12px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px),
+                repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 4px);
+            will-change: transform;
+        }
+
+        #cat {
+            position: fixed;
+            width: 60px;
+            height: 80px;
+            z-index: 50;
+            will-change: transform;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .cat-body {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            background-color: var(--cat-color);
+            border-radius: 25px;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .skin-listrado .cat-body {
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0, 0, 0, 0.15) 8px, rgba(0, 0, 0, 0.15) 11px);
+        }
+
+        .cat-head {
+            position: absolute;
+            width: 45px;
+            height: 38px;
+            background-color: var(--cat-color);
+            border-radius: 50% 50% 45% 45%;
+            top: -15px;
+            left: -2.5px;
+            z-index: 10;
+        }
+
+        .ear {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 15px solid var(--cat-color);
+            top: -8px;
+            transition: border-bottom-color 0.3s;
+        }
+        .ear.left { left: 5px; transform: rotate(-20deg); }
+        .ear.right { right: 5px; transform: rotate(20deg); }
+
+        .eye {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--eye-color);
+            border-radius: 50%;
+            top: 15px;
+            z-index: 12;
+            border: 0.5px solid #ddd;
+        }
+        .eye::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 6px;
+            background-color: black;
+            border-radius: 50%;
+            left: 2px;
+            top: 1px;
+        }
+        .eye.left { left: 10px; }
+        .eye.right { right: 10px; }
+
+        .paw {
+            position: absolute;
+            width: 12px;
+            height: 15px;
+            background-color: var(--cat-detail);
+            border-radius: 50%;
+            bottom: -5px;
+            z-index: 4;
+            transition: background-color 0.3s;
+        }
+        .paw.front-l { left: 8px; }
+        .paw.front-r { right: 8px; }
+        
+        .moving .paw.front-l { animation: step 0.2s infinite alternate; }
+        .moving .paw.front-r { animation: step 0.2s infinite alternate-reverse; }
+
+        @keyframes step {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
+        }
+
+        .tail-anchor {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            width: 1px;
+            height: 1px;
+            z-index: 2;
+        }
+
+        #speech-bubble {
+            position: fixed;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+            max-width: 150px;
+            z-index: 2500;
+            display: none;
+            pointer-events: none;
+        }
+        #speech-bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 20px;
+            border: 10px solid transparent;
+            border-top-color: white;
+        }
+
+        .color-menu {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            border-radius: 35px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 3000;
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #eee;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-option:hover { transform: scale(1.15); }
+        .color-option.active { border-color: #3498db; }
+        
+        .opt-laranja { background-color: #f39c12; }
+        .opt-frajola { background: linear-gradient(135deg, #222 50%, #fff 50%); }
+        .opt-preto { background-color: #2c3e50; }
+        .opt-cinza { background-color: #95a5a6; }
+        .opt-listrado { background: repeating-linear-gradient(45deg, #95a5a6, #95a5a6 5px, #2c3e50 5px, #2c3e50 10px); }
+        .opt-branco { background-color: #ffffff; border: 1px solid #ddd; }
+        .opt-tricolor { background: conic-gradient(#f39c12 0% 33%, #fff 33% 66%, #2c3e50 66% 100%); }
+
+        #ai-button {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #6200ee;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 3000;
+        }
+    </style>
+</head>
+<body class="skin-laranja">
+
+    <div id="speech-bubble">Miau!</div>
+    <button id="ai-button" onclick="askCatSomething()">✨ Me conte algo!</button>
+
+    <div class="color-menu" id="colorMenu">
+        <div class="color-option opt-laranja active" data-skin="skin-laranja" title="Laranja"></div>
+        <div class="color-option opt-frajola" data-skin="skin-frajola" title="Frajola"></div>
+        <div class="color-option opt-preto" data-skin="skin-preto" title="Preto"></div>
+        <div class="color-option opt-cinza" data-skin="skin-cinza" title="Cinza"></div>
+        <div class="color-option opt-listrado" data-skin="skin-listrado" title="Listrado"></div>
+        <div class="color-option opt-branco" data-skin="skin-branco" title="Branco"></div>
+        <div class="color-option opt-tricolor" data-skin="skin-tricolor" title="Tricolor"></div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+    <div id="wool-cursor"></div>
+
+    <div id="cat">
+        <div class="cat-body">
+            <div class="cat-head">
+                <div class="ear left"></div>
+                <div class="ear right"></div>
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+            </div>
+            <div class="paw front-l"></div>
+            <div class="paw front-r"></div>
+            <div class="tail-anchor" id="tailAnchor"></div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        const cat = document.getElementById('cat');
+        const wool = document.getElementById('wool-cursor');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const speechBubble = document.getElementById('speech-bubble');
+        
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let catX = mouseX;
+        let catY = mouseY;
+        let catAngle = 0;
+        let currentSkinName = "Laranja";
+
+        const gravity = 0.4;
+        const friction = 0.92;
+
+        const ropeSegments = 12;
+        const ropeLength = 6;
+        const ropePoints = Array.from({length: ropeSegments}, () => ({x: mouseX, y: mouseY, oldX: mouseX, oldY: mouseY}));
+
+        const tailSegments = 8;
+        const tailSegLength = 5;
+        const tailPoints = Array.from({length: tailSegments}, () => ({x: catX, y: catY, oldX: catX, oldY: catY}));
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            wool.style.left = (mouseX - 18) + 'px';
+            wool.style.top = (mouseY - 18) + 'px';
+        });
+
+        function updatePhysics(points, targetX, targetY, segLen) {
+            points[0].x = targetX;
+            points[0].y = targetY;
+
+            for (let i = 1; i < points.length; i++) {
+                let p = points[i];
+                let vx = (p.x - p.oldX) * friction;
+                let vy = (p.y - p.oldY) * friction;
+                p.oldX = p.x; p.oldY = p.y;
+                p.x += vx;
+                p.y += vy + gravity;
+            }
+
+            for (let n = 0; n < 5; n++) {
+                for (let i = 0; i < points.length - 1; i++) {
+                    let p1 = points[i], p2 = points[i+1];
+                    let dx = p2.x - p1.x, dy = p2.y - p1.y;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist === 0) continue;
+                    let diff = segLen - dist;
+                    let percent = (diff / dist) / 2;
+                    let ox = dx * percent, oy = dy * percent;
+                    if (i !== 0) { p1.x -= ox; p1.y -= oy; }
+                    p2.x += ox; p2.y += oy;
+                }
+            }
+        }
+
+        function drawPath(points, color, width, dashPattern = []) {
+            ctx.beginPath();
+            ctx.setLineDash(dashPattern);
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length - 1; i++) {
+                const xc = (points[i].x + points[i + 1].x) / 2;
+                const yc = (points[i].y + points[i + 1].y) / 2;
+                ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+            }
+            ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawTailTip(points, color, width) {
+            const lastIdx = points.length - 1;
+            const secondLastIdx = points.length - 2;
+            ctx.beginPath();
+            ctx.moveTo(points[secondLastIdx].x, points[secondLastIdx].y);
+            ctx.lineTo(points[lastIdx].x, points[lastIdx].y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        async function getCatSpeech(prompt) {
+            const systemPrompt = "Você é um gato brincalhão. Responda em português como um gato, curto e fofo (máximo 12 palavras).";
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Miau!";
+            } catch (err) { return "Purrr!"; }
+        }
+
+        function showSpeech(text) {
+            speechBubble.innerText = text;
+            speechBubble.style.display = 'block';
+            setTimeout(() => { speechBubble.style.display = 'none'; }, 3000);
+        }
+
+        window.askCatSomething = async () => {
+            const s = await getCatSpeech("Diga algo sobre o seu dia.");
+            showSpeech(s);
+        };
+
+        document.getElementById('colorMenu').addEventListener('click', (e) => {
+            const opt = e.target.closest('.color-option');
+            if (!opt) return;
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            document.body.className = opt.dataset.skin;
+            currentSkinName = opt.title;
+            showSpeech(`Miau! Agora sou ${currentSkinName}!`);
+        });
+
+        function animate() {
+            const speed = 0.05;
+            const dx = mouseX - catX;
+            const dy = mouseY - catY;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 20) {
+                catX += dx * speed;
+                catY += dy * speed;
+                cat.classList.add('moving');
+                catAngle = Math.atan2(dy, dx);
+            } else {
+                cat.classList.remove('moving');
+            }
+
+            cat.style.transform = `translate(${catX - 30}px, ${catY - 40}px) rotate(${catAngle * 180 / Math.PI + 90}deg)`;
+
+            const tailAnchorX = catX - Math.cos(catAngle) * 15;
+            const tailAnchorY = catY - Math.sin(catAngle) * 15;
+
+            updatePhysics(ropePoints, mouseX, mouseY, ropeLength);
+            updatePhysics(tailPoints, tailAnchorX, tailAnchorY, tailSegLength);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPath(ropePoints, '#e74c3c', 3);
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const bodyClass = document.body.className;
+            const catColor = rootStyle.getPropertyValue('--cat-color').trim();
+
+            if (bodyClass === 'skin-listrado') {
+                drawPath(tailPoints, '#95a5a6', 8);
+                drawPath(tailPoints, '#7f8c8d', 8, [5, 10]); 
+            } else if (bodyClass === 'skin-frajola') {
+                drawPath(tailPoints, '#222', 8);
+                drawTailTip(tailPoints, '#fff', 8);
+            } else if (bodyClass === 'skin-tricolor') {
+                // Cauda tricolor com manchas brancas e pretas
+                drawPath(tailPoints, '#f39c12', 8);
+                drawPath(tailPoints, '#ffffff', 8, [10, 20]);
+                drawPath(tailPoints, '#2c3e50', 8, [5, 25]);
+            } else if (bodyClass === 'skin-preto') {
+                drawPath(tailPoints, '#2c3e50', 8);
+            } else if (bodyClass === 'skin-cinza') {
+                drawPath(tailPoints, '#95a5a6', 8);
+            } else if (bodyClass === 'skin-branco') {
+                drawPath(tailPoints, '#ffffff', 8);
+            } else {
+                drawPath(tailPoints, catColor, 8);
+            }
+
+            speechBubble.style.left = (catX + 25) + 'px';
+            speechBubble.style.top = (catY - 90) + 'px';
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
