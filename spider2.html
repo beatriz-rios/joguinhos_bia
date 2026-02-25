@@ -9,32 +9,46 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-            background-color: #a0a3a5;
+            background-color: #d1d8e0;
             overflow: hidden; /* Evita barras de rolagem */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             cursor: none; /* Esconde o cursor padrão para usarmos o mosquito */
             position: relative;
         }
 
-        /* Canvas para desenhar o rastro (teia) */
-        #trail-canvas {
+        /* --- UI (Cronômetro e Botão) --- */
+        #timer-display {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 1000;
             pointer-events: none;
-            z-index: 10; /* Fica por baixo das aranhas */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: color 0.3s;
         }
 
-        /* Botão para apagar as aranhas extras */
+        @keyframes pulseText {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulseText 0.5s infinite;
+        }
+
         #btn-limpar {
             position: absolute;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             padding: 12px 24px;
-            background-color: #e74c3c;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 8px;
@@ -48,7 +62,7 @@
         }
 
         #btn-limpar:hover {
-            background-color: #c0392b;
+            background-color: #2980b9;
             transform: translateX(-50%) scale(1.05);
         }
 
@@ -56,72 +70,148 @@
             transform: translateX(-50%) scale(0.95);
         }
 
+        /* --- ZONA SEGURA (Teia de Proteção) --- */
+        #safe-zone {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            top: 50%;
+            left: 5%;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            /* Cria o visual de teia radial usando CSS */
+            background: 
+                repeating-radial-gradient(circle at center, transparent, transparent 20px, rgba(255, 255, 255, 0.5) 21px, rgba(255, 255, 255, 0.5) 22px),
+                repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.5) 0deg 1deg, transparent 1deg 30deg);
+            box-shadow: 0 0 20px rgba(255,255,255,0.3) inset, 0 0 15px rgba(0,0,0,0.1);
+            z-index: 5; /* Fica abaixo das aranhas */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px black;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* --- LATA DE BAYGON --- */
+        #baygon {
+            position: absolute;
+            bottom: 20px;
+            right: 50px;
+            width: 50px;
+            height: 130px;
+            background: linear-gradient(to right, #1b5e20, #4caf50, #1b5e20); /* Verde escuro */
+            border-radius: 5px 5px 15px 15px;
+            z-index: 1000;
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
+        
+        #baygon::before {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 10px;
+            width: 30px;
+            height: 18px;
+            background: #fdd835; /* Tampa Amarela */
+            border-radius: 5px 5px 0 0;
+        }
+
+        #baygon::after {
+            content: 'BAYGON';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
+            color: yellow;
+            font-weight: bold;
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+
+        #baygon-nozzle {
+            position: absolute;
+            top: -12px;
+            left: 2px; /* Apontando para a esquerda/centro da tela */
+            width: 15px;
+            height: 5px;
+            background: #222;
+            border-radius: 2px;
+            z-index: 1001;
+        }
+
+        @keyframes shakeCan {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+            75% { transform: rotate(-15deg); }
+        }
+        .shake {
+            animation: shakeCan 0.1s infinite;
+        }
+
+        /* --- FUMAÇA DO SPRAY --- */
+        #smoke {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* O spray sai do canto inferior direito */
+            background: radial-gradient(circle at bottom right, rgba(240, 255, 240, 0.95) 0%, rgba(200, 230, 200, 0.8) 40%, transparent 90%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 900;
+            transition: opacity 1s ease-out;
+        }
+        #smoke.spraying {
+            opacity: 1;
+            transition: opacity 0.1s ease-in;
+        }
+
+        /* Canvas para desenhar o rastro (teia) */
+        #trail-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
         /* --- ESTILIZAÇÃO DO MOSQUITO (CURSOR) --- */
         #mosquito {
             position: absolute;
             width: 14px;
             height: 14px;
-            pointer-events: none; /* Para não atrapalhar os cliques na tela */
-            z-index: 2000; /* Fica acima de tudo, inclusive das aranhas */
+            pointer-events: none;
+            z-index: 2000;
             will-change: transform;
         }
 
         /* Corpo do Mosquito */
         .mosq-body {
-            position: absolute;
-            width: 4px;
-            height: 14px;
-            background-color: #2c3e50;
-            border-radius: 40%;
-            top: 0;
-            left: 5px;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+            position: absolute; width: 4px; height: 14px;
+            background-color: #2c3e50; border-radius: 40%;
+            top: 0; left: 5px; box-shadow: 0 2px 3px rgba(0,0,0,0.4);
         }
 
         /* Asas do Mosquito */
         .mosq-wing {
-            position: absolute;
-            width: 12px;
-            height: 6px;
+            position: absolute; width: 12px; height: 6px;
             background-color: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(0, 0, 0, 0.3);
-            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.3); border-radius: 50%;
             top: 3px;
         }
+        .mosq-wing.left { right: 7px; transform-origin: center right; animation: flapLeft 0.2s infinite alternate ease-in-out; }
+        .mosq-wing.right { left: 7px; transform-origin: center left; animation: flapRight 0.2s infinite alternate ease-in-out; }
 
-        /* Asa Esquerda */
-        .mosq-wing.left {
-            right: 7px;
-            transform-origin: center right;
-            animation: flapLeft 0.25s infinite alternate ease-in-out; /* Batimento lento */
-        }
-
-        /* Asa Direita */
-        .mosq-wing.right {
-            left: 7px;
-            transform-origin: center left;
-            animation: flapRight 0.25s infinite alternate ease-in-out; /* Batimento lento */
-        }
-
-        /* Animações das Asas do Mosquito */
-        @keyframes flapLeft {
-            0% { transform: rotate(-10deg); }
-            100% { transform: rotate(-60deg); }
-        }
-        @keyframes flapRight {
-            0% { transform: rotate(10deg); }
-            100% { transform: rotate(60deg); }
-        }
-
+        @keyframes flapLeft { 0% { transform: rotate(-10deg); } 100% { transform: rotate(-60deg); } }
+        @keyframes flapRight { 0% { transform: rotate(10deg); } 100% { transform: rotate(60deg); } }
 
         /* --- ESTILIZAÇÃO DA ARANHA --- */
         .spider {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            top: 0;
-            left: 0;
-            /* O pointer-events none faz o clique atravessar a aranha e atingir o fundo */
+            width: 40px; height: 40px; top: 0; left: 0;
             pointer-events: none; 
             will-change: transform;
             z-index: 50;
@@ -129,57 +219,32 @@
 
         /* Patas da Aranha */
         .spider-leg {
-            position: absolute;
-            width: 48px;
-            height: 2px;
-            background: #111;
-            top: 19px;
-            left: -4px;
-            border-radius: 2px;
+            position: absolute; width: 48px; height: 2px;
+            background: #111; top: 19px; left: -4px; border-radius: 2px;
         }
-
-        /* Rotação inicial de cada par de patas */
         .leg-1 { transform: rotate(25deg); }
         .leg-2 { transform: rotate(65deg); }
         .leg-3 { transform: rotate(115deg); }
         .leg-4 { transform: rotate(155deg); }
 
-        /* Corpo da Aranha */
+        /* Corpo e Cabeça da Aranha */
         .spider-body {
-            position: absolute;
-            width: 16px;
-            height: 22px;
+            position: absolute; width: 16px; height: 22px;
             background: radial-gradient(circle at center, #333, #000);
-            border-radius: 50%;
-            top: 9px;
-            left: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            border-radius: 50%; top: 9px; left: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.4);
         }
-
-        /* Cabeça da Aranha */
         .spider-head {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #111;
-            border-radius: 50%;
-            top: 2px;
-            left: 14px;
+            position: absolute; width: 12px; height: 12px;
+            background: #111; border-radius: 50%; top: 2px; left: 14px;
         }
 
         /* Olhinhos vermelhos */
         .eye {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: #ff3b3b;
-            border-radius: 50%;
-            top: 4px;
+            position: absolute; width: 3px; height: 3px;
+            background: #ff3b3b; border-radius: 50%; top: 4px;
         }
-        .eye-left { left: 15px; }
-        .eye-right { right: 15px; }
+        .eye-left { left: 15px; } .eye-right { right: 15px; }
 
-        /* Animação das patas quando estão a andar */
         @keyframes walk1 { 0%, 100% { transform: rotate(25deg); } 50% { transform: rotate(35deg); } }
         @keyframes walk2 { 0%, 100% { transform: rotate(65deg); } 50% { transform: rotate(50deg); } }
         @keyframes walk3 { 0%, 100% { transform: rotate(115deg); } 50% { transform: rotate(130deg); } }
@@ -195,11 +260,19 @@
 <body>
 
     <button id="btn-limpar">Deixar Apenas 1 Aranha</button>
+    <div id="timer-display">Baygon em: 10s</div>
     
-    <!-- Canvas onde o rastro (teia) será desenhado -->
+    <!-- Zona Segura (Teia) -->
+    <div id="safe-zone">ZONA<br>SEGURA</div>
+
     <canvas id="trail-canvas"></canvas>
 
-    <!-- Mosquito que substitui o cursor -->
+    <!-- Fumaça e Lata de Baygon -->
+    <div id="smoke"></div>
+    <div id="baygon">
+        <div id="baygon-nozzle"></div>
+    </div>
+
     <div id="mosquito">
         <div class="mosq-wing left"></div>
         <div class="mosq-wing right"></div>
@@ -207,19 +280,20 @@
     </div>
 
     <script>
-        // Array para guardar todas as aranhas no ecrã
         const spiders = [];
-        
-        // Posição inicial do rato (centro do ecrã)
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
 
-        // Elemento do mosquito
         const mosquito = document.getElementById('mosquito');
-
-        // Configuração do Canvas para a teia
         const canvas = document.getElementById('trail-canvas');
         const ctx = canvas.getContext('2d');
+
+        // Elementos do novo Mini-game do Baygon
+        const timerDisplay = document.getElementById('timer-display');
+        const baygonCan = document.getElementById('baygon');
+        const smokeEffect = document.getElementById('smoke');
+        const safeZone = document.getElementById('safe-zone');
+        let tempoRestante = 10;
 
         function redimensionarCanvas() {
             canvas.width = window.innerWidth;
@@ -228,24 +302,17 @@
         window.addEventListener('resize', redimensionarCanvas);
         redimensionarCanvas();
 
-        // Inicializa o mosquito no centro
         mosquito.style.transform = `translate(${mouseX - 7}px, ${mouseY - 7}px)`;
 
-        // Atualiza a posição do alvo (rato/mouse)
         window.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
-            
-            // Move o mosquito para seguir o cursor. (Subtrai 7px para centralizar o mosquito de 14x14)
             mosquito.style.transform = `translate(${mouseX - 7}px, ${mouseY - 7}px)`;
         });
 
-        // Função para criar uma nova aranha
         function criarAranha(startX, startY) {
             const el = document.createElement('div');
             el.className = 'spider';
-            
-            // Estrutura HTML interna da aranha
             el.innerHTML = `
                 <div class="spider-leg leg-1"></div>
                 <div class="spider-leg leg-2"></div>
@@ -256,104 +323,139 @@
                 <div class="eye eye-left"></div>
                 <div class="eye eye-right"></div>
             `;
-            
             document.body.appendChild(el);
-
-            // Cada aranha tem uma velocidade ligeiramente diferente
             const randomSpeed = 0.03 + (Math.random() * 0.04);
-
-            const spiderData = {
-                element: el,
-                x: startX,
-                y: startY,
-                prevX: startX, // Usado para desenhar a linha do rastro
-                prevY: startY, // Usado para desenhar a linha do rastro
-                speed: randomSpeed,
-                angle: 0
-            };
-            
-            spiders.push(spiderData);
+            spiders.push({ element: el, x: startX, y: startY, prevX: startX, prevY: startY, speed: randomSpeed, angle: 0 });
         }
 
-        // 1. Cria a primeira aranha no centro do ecrã ao iniciar
         criarAranha(window.innerWidth / 2, window.innerHeight / 2);
 
-        // 2. Evento de clique no ecrã para criar aranhas em locais aleatórios
         window.addEventListener('click', (e) => {
-            // Se o clique foi no botão de limpar, não cria aranha nova!
             if (e.target.id === 'btn-limpar') return;
-
-            // Gera coordenadas aleatórias dentro da janela
-            const randomX = Math.random() * window.innerWidth;
-            const randomY = Math.random() * window.innerHeight;
-            
-            criarAranha(randomX, randomY);
+            criarAranha(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
         });
 
-        // 3. Evento do botão para apagar as aranhas extras
         document.getElementById('btn-limpar').addEventListener('click', (e) => {
-            // Se houver mais de uma aranha...
             if (spiders.length > 1) {
-                // Remove os elementos HTML (começando da segunda aranha)
                 for (let i = 1; i < spiders.length; i++) {
                     spiders[i].element.remove();
                 }
-                // Mantém apenas a primeira aranha na nossa lista
                 spiders.length = 1; 
             }
-            
-            // Limpa todo o rastro desenhado no canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Evita que o clique no botão vaze para o window
             e.stopPropagation();
         });
 
-        // Loop de Animação para fazer as aranhas seguirem o rato
+        // --- SISTEMA DO BAYGON E ÁREA SEGURA ---
+        setInterval(() => {
+            tempoRestante--;
+            
+            if (tempoRestante > 0) {
+                timerDisplay.innerText = `Baygon em: ${tempoRestante}s`;
+                // Altera a cor e adiciona efeito pulsante nos últimos 3 segundos
+                if (tempoRestante <= 3) {
+                    timerDisplay.style.color = '#e74c3c';
+                    timerDisplay.classList.add('pulse');
+                } else {
+                    timerDisplay.style.color = '#333';
+                    timerDisplay.classList.remove('pulse');
+                }
+            } else {
+                timerDisplay.innerText = `PSSSST!`;
+                timerDisplay.style.color = '#27ae60';
+                timerDisplay.classList.remove('pulse');
+                
+                espirrarBaygon();
+                tempoRestante = 10;
+            }
+        }, 1000);
+
+        function espirrarBaygon() {
+            // Anima a lata e mostra fumaça
+            baygonCan.classList.add('shake');
+            smokeEffect.classList.add('spraying');
+
+            // Calcula o centro e o raio da Área Segura
+            const szRect = safeZone.getBoundingClientRect();
+            const szCenterX = szRect.left + szRect.width / 2;
+            const szCenterY = szRect.top + szRect.height / 2;
+            const szRadius = szRect.width / 2;
+
+            const survivingSpiders = [];
+
+            spiders.forEach(spider => {
+                // Mede a distância entre a aranha e o centro da Área Segura
+                const dist = Math.hypot(spider.x - szCenterX, spider.y - szCenterY);
+                
+                // Se a distância for menor que o raio, ela está salva (+20px de margem pelo tamanho da aranha)
+                if (dist <= szRadius + 20) {
+                    survivingSpiders.push(spider);
+                } else {
+                    // Está fora da área segura, então a aranha morre (animação de encolher/desaparecer)
+                    spider.element.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
+                    spider.element.style.opacity = '0';
+                    spider.element.style.transform += ' scale(0.3)'; 
+                    
+                    // Remove elemento HTML da aranha morta depois de meio segundo
+                    setTimeout(() => {
+                        if (spider.element.parentNode) {
+                            spider.element.remove();
+                        }
+                    }, 800);
+                }
+            });
+
+            // Atualizamos a lista deixando apenas as que sobreviveram para que continuem seguindo o rato
+            spiders.length = 0;
+            spiders.push(...survivingSpiders);
+
+            // Tira os efeitos visuais do veneno
+            setTimeout(() => {
+                baygonCan.classList.remove('shake');
+                smokeEffect.classList.remove('spraying');
+                
+                // Se todas as aranhas morrerem, dá 'respawn' de 1 no meio da tela para o jogo continuar
+                if (spiders.length === 0) {
+                    setTimeout(() => {
+                        criarAranha(window.innerWidth / 2, window.innerHeight / 2);
+                    }, 500);
+                }
+            }, 1000); // 1 segundo de spray
+        }
+
+        // --- LOOP DE ANIMAÇÃO ---
         function animar() {
             spiders.forEach(spider => {
                 const dx = mouseX - spider.x;
                 const dy = mouseY - spider.y;
                 const dist = Math.hypot(dx, dy);
 
-                // Se a aranha estiver longe do rato (mosquito), ela anda
                 if (dist > 10) {
-                    // Guarda a posição antes de se mover para criar a linha
                     spider.prevX = spider.x;
                     spider.prevY = spider.y;
 
-                    // Move a aranha
                     spider.x += dx * spider.speed;
                     spider.y += dy * spider.speed;
                     
-                    // Desenha o rastro da teia
                     ctx.beginPath();
                     ctx.moveTo(spider.prevX, spider.prevY);
                     ctx.lineTo(spider.x, spider.y);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; // Cor branca semi-transparente para parecer teia
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; 
                     ctx.lineWidth = 1;
                     ctx.stroke();
                     
-                    // Calcula a rotação para ela olhar para o rato (soma 90 graus / Math.PI/2)
                     spider.angle = Math.atan2(dy, dx) + (Math.PI / 2);
-                    
-                    // Adiciona a classe que faz as patas se mexerem
                     spider.element.classList.add('walking');
                 } else {
-                    // Para as patas quando chega perto
                     spider.element.classList.remove('walking');
                 }
 
-                // Aplica a posição e a rotação
-                // Subtraímos 20px para centrar o ponto de origem (já que a aranha tem 40x40px)
                 spider.element.style.transform = `translate(${spider.x - 20}px, ${spider.y - 20}px) rotate(${spider.angle}rad)`;
             });
 
-            // Chama o próximo frame de animação
             requestAnimationFrame(animar);
         }
 
-        // Inicia o loop de animação
         animar();
     </script>
 </body>
