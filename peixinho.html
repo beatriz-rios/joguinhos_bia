@@ -68,7 +68,7 @@
             <div class="flex justify-center gap-4 mb-6">
                 <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
                     <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">1 Jogador</span>
-                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Mouse</span>
+                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Rato/Toque</span>
                 </div>
                 <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
                     <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">2 Jogadores</span>
@@ -107,7 +107,8 @@
     <div id="gameOverMenu" class="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/70 hidden opacity-0 transition-opacity duration-500">
         <div class="glass-panel p-8 rounded-3xl text-center max-w-sm w-11/12">
             <h2 class="text-4xl font-bold text-red-500 mb-2 drop-shadow-md">Fim de Jogo</h2>
-            <p class="text-gray-300 mb-6">Todos foram comidos!</p>
+            <h3 id="winnerText" class="text-3xl font-extrabold mb-2 drop-shadow-lg hidden"></h3>
+            <p id="gameOverSubtitle" class="text-gray-300 mb-6">Todos foram comidos!</p>
             
             <div class="bg-black/30 rounded-xl p-4 mb-8 flex justify-center gap-6">
                 <div class="text-center">
@@ -151,6 +152,8 @@
         const finalScoreP1 = document.getElementById('finalScoreP1');
         const finalScoreP2 = document.getElementById('finalScoreP2');
         const finalScoreP2Container = document.getElementById('finalScoreP2Container');
+        const winnerText = document.getElementById('winnerText');
+        const gameOverSubtitle = document.getElementById('gameOverSubtitle');
         
         // Botões
         const start1PBtn = document.getElementById('start1PBtn');
@@ -527,8 +530,9 @@
                 }
             }
 
-            // Verificar se todos morreram
-            if (players.every(p => !p.alive)) {
+            // Verificar se o jogo deve terminar (no multiplayer, termina se um morrer)
+            const isGameOver = isMultiplayer ? players.some(p => !p.alive) : players.every(p => !p.alive);
+            if (isGameOver) {
                 endGame();
                 return;
             }
@@ -613,10 +617,32 @@
             gameState = 'GAMEOVER';
             cancelAnimationFrame(animationId);
             
-            finalScoreP1.innerText = players[0] ? players[0].score : 0;
+            const p1Score = players[0] ? players[0].score : 0;
+            finalScoreP1.innerText = p1Score;
+            
             if (isMultiplayer) {
-                finalScoreP2.innerText = players[1] ? players[1].score : 0;
+                const p2Score = players[1] ? players[1].score : 0;
+                finalScoreP2.innerText = p2Score;
+                
+                winnerText.classList.remove('hidden');
+                gameOverSubtitle.innerText = "Um jogador foi comido!";
+                
+                // Mostrar o vencedor com base nos pontos
+                if (p1Score > p2Score) {
+                    winnerText.innerText = '🏆 P1 Venceu!';
+                    winnerText.className = 'text-3xl font-extrabold text-orange-400 mb-2 drop-shadow-lg';
+                } else if (p2Score > p1Score) {
+                    winnerText.innerText = '🏆 P2 Venceu!';
+                    winnerText.className = 'text-3xl font-extrabold text-cyan-400 mb-2 drop-shadow-lg';
+                } else {
+                    winnerText.innerText = '🤝 Empate!';
+                    winnerText.className = 'text-3xl font-extrabold text-yellow-400 mb-2 drop-shadow-lg';
+                }
+            } else {
+                winnerText.classList.add('hidden');
+                gameOverSubtitle.innerText = "Foste comido!";
             }
+            
             hud.classList.add('hidden');
             
             gameOverMenu.classList.remove('hidden');
