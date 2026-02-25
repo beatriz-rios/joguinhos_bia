@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo do Peixinho</title>
+    <!-- Tailwind CSS para estilização rápida da UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #001a33, #004d80, #0088cc);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Previne scroll no mobile */
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Efeito de vidro para os menus */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="relative text-white select-none">
+
+    <!-- HUD (Pontuação e Controles Rápidos) -->
+    <div id="hud" class="absolute top-4 left-4 right-4 flex justify-between gap-2 z-10 hidden pointer-events-none">
+        <!-- Pontuações -->
+        <div class="flex flex-col gap-2">
+            <div class="glass-panel px-4 py-2 rounded-full text-lg font-bold shadow-lg w-max pointer-events-auto">
+                <span class="text-orange-400">P1:</span> <span id="scoreDisplay" class="text-white">0</span>
+            </div>
+            <div id="p2ScorePanel" class="glass-panel px-4 py-2 rounded-full text-lg font-bold shadow-lg w-max hidden pointer-events-auto">
+                <span class="text-cyan-400">P2:</span> <span id="scoreDisplayP2" class="text-white">0</span>
+            </div>
+        </div>
+        
+        <!-- Botão Pause -->
+        <div class="pointer-events-auto">
+            <button id="pauseBtn" class="glass-panel px-4 py-2 rounded-xl text-lg font-bold hover:bg-white/20 transition-all shadow-lg active:scale-95">
+                ⏸️ Pause
+            </button>
+        </div>
+    </div>
+
+    <!-- Menu Principal -->
+    <div id="startMenu" class="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/40 transition-opacity duration-300">
+        <div class="glass-panel p-8 rounded-3xl text-center max-w-md w-11/12">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-200 drop-shadow-lg">
+                Oceano Profundo
+            </h1>
+            <p class="text-gray-200 mb-6 text-lg">
+                Come os peixes <span class="text-green-400 font-bold">menores</span> para crescer.<br>
+                Evita os peixes <span class="text-red-400 font-bold">maiores</span>!
+            </p>
+            
+            <div class="flex justify-center gap-4 mb-6">
+                <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
+                    <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">1 Jogador</span>
+                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Mouse</span>
+                </div>
+                <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
+                    <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">2 Jogadores</span>
+                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Setas</span>
+                    <span class="text-sm text-gray-200"><span class="text-cyan-400 font-bold">P2:</span> WASD</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3 mt-2">
+                <button id="start1PBtn" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl text-xl font-bold shadow-[0_0_15px_rgba(0,180,255,0.5)] transition-all transform hover:scale-105 active:scale-95">
+                    1 Jogador
+                </button>
+                <button id="start2PBtn" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all transform hover:scale-105 active:scale-95">
+                    2 Jogadores
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu de Pausa -->
+    <div id="pauseMenu" class="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/60 hidden opacity-100">
+        <div class="glass-panel p-8 rounded-3xl text-center max-w-sm w-11/12">
+            <h2 class="text-4xl font-bold text-white mb-8 drop-shadow-md">Jogo em Pausa</h2>
+            <div class="flex flex-col gap-4">
+                <button id="resumeBtn" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl text-lg font-bold transition-all transform hover:scale-105 active:scale-95">
+                    ▶️ Continuar
+                </button>
+                <button id="menuBtnFromPause" class="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-lg font-bold transition-all transform hover:scale-105 active:scale-95">
+                    🏠 Sair para o Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecrã de Fim de Jogo -->
+    <div id="gameOverMenu" class="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/70 hidden opacity-0 transition-opacity duration-500">
+        <div class="glass-panel p-8 rounded-3xl text-center max-w-sm w-11/12">
+            <h2 class="text-4xl font-bold text-red-500 mb-2 drop-shadow-md">Fim de Jogo</h2>
+            <p class="text-gray-300 mb-6">Todos foram comidos!</p>
+            
+            <div class="bg-black/30 rounded-xl p-4 mb-8 flex justify-center gap-6">
+                <div class="text-center">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">P1</p>
+                    <p id="finalScoreP1" class="text-4xl font-black text-orange-400 drop-shadow-lg">0</p>
+                </div>
+                <div id="finalScoreP2Container" class="text-center hidden border-l border-white/20 pl-6">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">P2</p>
+                    <p id="finalScoreP2" class="text-4xl font-black text-cyan-400 drop-shadow-lg">0</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="restartBtn" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 rounded-xl text-lg font-bold shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all transform hover:scale-105 active:scale-95">
+                    Jogar Novamente
+                </button>
+                <button id="menuBtnFromOver" class="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-lg font-bold transition-all transform hover:scale-105 active:scale-95">
+                    🏠 Voltar ao Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas do Jogo -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Elementos da UI
+        const startMenu = document.getElementById('startMenu');
+        const pauseMenu = document.getElementById('pauseMenu');
+        const gameOverMenu = document.getElementById('gameOverMenu');
+        const hud = document.getElementById('hud');
+        
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const scoreDisplayP2 = document.getElementById('scoreDisplayP2');
+        const p2ScorePanel = document.getElementById('p2ScorePanel');
+        
+        const finalScoreP1 = document.getElementById('finalScoreP1');
+        const finalScoreP2 = document.getElementById('finalScoreP2');
+        const finalScoreP2Container = document.getElementById('finalScoreP2Container');
+        
+        // Botões
+        const start1PBtn = document.getElementById('start1PBtn');
+        const start2PBtn = document.getElementById('start2PBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const menuBtnFromPause = document.getElementById('menuBtnFromPause');
+        const menuBtnFromOver = document.getElementById('menuBtnFromOver');
+
+        // Estado do Jogo
+        let gameState = 'START'; // START, PLAYING, PAUSED, GAMEOVER
+        let isMultiplayer = false;
+        let animationId;
+        let frameCount = 0;
+
+        // Entidades
+        let players = [];
+        let enemies = [];
+        let bubbles = [];
+        let dummyMenuPlayer = { x: 0, y: 0, radius: 30, color: '#ff8c00', facingLeft: false };
+
+        // Teclado
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            // Prevenir scroll com as setas do teclado durante o jogo
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code) && gameState === 'PLAYING') {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        // Cores para os inimigos
+        const enemyColors = [
+            '#ff4d4d', '#ff99cc', '#cc99ff', '#66ccff', 
+            '#66ffb3', '#ffff66', '#ffb366', '#d9d9d9', '#a64d79'
+        ];
+
+        // Redimensionar Canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Rato e Toque (Controlos do P1)
+        let targetX = canvas.width / 2;
+        let targetY = canvas.height / 2;
+
+        function updateTarget(x, y) {
+            if (gameState !== 'PLAYING') return;
+            targetX = Math.max(0, Math.min(canvas.width, x));
+            targetY = Math.max(0, Math.min(canvas.height, y));
+        }
+
+        window.addEventListener('mousemove', (e) => updateTarget(e.clientX, e.clientY));
+        
+        canvas.addEventListener('touchmove', (e) => {
+            if(gameState === 'PLAYING') e.preventDefault();
+            updateTarget(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if(gameState === 'PLAYING') {
+                updateTarget(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        // Inicializar Jogadores
+        function initPlayers(multi) {
+            isMultiplayer = multi;
+            players = [];
+            
+            // P1 (Laranja)
+            players.push({
+                id: 1,
+                alive: true,
+                x: canvas.width / 2 - (multi ? 50 : 0),
+                y: canvas.height / 2,
+                radius: 15,
+                color: '#ff8c00', 
+                speed: 0.1, // lerp do rato (para 1 Jogador)
+                moveSpeed: 5, // velocidade base do teclado (para 2 Jogadores)
+                facingLeft: false,
+                score: 0
+            });
+            targetX = players[0].x;
+            targetY = players[0].y;
+
+            // P2 (Azul - Controlado por Teclado)
+            if (multi) {
+                players.push({
+                    id: 2,
+                    alive: true,
+                    x: canvas.width / 2 + 50,
+                    y: canvas.height / 2,
+                    radius: 15,
+                    color: '#00ccff', 
+                    moveSpeed: 5, // velocidade base do teclado
+                    facingLeft: false,
+                    score: 0
+                });
+                p2ScorePanel.classList.remove('hidden');
+                finalScoreP2Container.classList.remove('hidden');
+            } else {
+                p2ScorePanel.classList.add('hidden');
+                finalScoreP2Container.classList.add('hidden');
+            }
+            
+            updateScoresUI();
+        }
+
+        function updateScoresUI() {
+            if (players[0]) scoreDisplay.innerText = players[0].score;
+            if (isMultiplayer && players[1]) scoreDisplayP2.innerText = players[1].score;
+        }
+
+        // Desenhar um peixe
+        function drawFish(x, y, radius, color, isFacingLeft, isPlayer = false, pId = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // Efeito visual de rotação (apenas no modo 1 jogador com o rato)
+            if (isPlayer && pId === 1 && !isMultiplayer) {
+                const dy = targetY - y;
+                const angle = Math.max(-0.5, Math.min(0.5, dy * 0.01));
+                ctx.rotate(isFacingLeft ? -angle : angle);
+            }
+
+            if (isFacingLeft) {
+                ctx.scale(-1, 1);
+            }
+
+            // Sombra
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 5;
+
+            // Barbatana superior
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, -radius * 0.5);
+            ctx.quadraticCurveTo(-radius * 0.5, -radius * 1.2, -radius * 0.8, -radius * 0.3);
+            ctx.fill();
+
+            // Barbatana inferior
+            ctx.beginPath();
+            ctx.moveTo(0, radius * 0.5);
+            ctx.quadraticCurveTo(-radius * 0.5, radius * 1.2, -radius * 0.8, radius * 0.3);
+            ctx.fill();
+
+            // Corpo
+            ctx.beginPath();
+            ctx.ellipse(0, 0, radius, radius * 0.65, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cauda
+            ctx.beginPath();
+            ctx.moveTo(-radius * 0.7, 0);
+            ctx.lineTo(-radius * 1.6, -radius * 0.7);
+            ctx.quadraticCurveTo(-radius * 1.4, 0, -radius * 1.6, radius * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            // Remover sombra para os detalhes
+            ctx.shadowColor = 'transparent';
+
+            // Olho
+            const eyeX = radius * 0.5;
+            const eyeY = -radius * 0.2;
+            
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, radius * 0.18, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#001a33';
+            ctx.beginPath();
+            ctx.arc(eyeX + radius * 0.05, eyeY, radius * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(eyeX + radius * 0.07, eyeY - radius * 0.03, radius * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Boca
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = radius * 0.05;
+            ctx.beginPath();
+            ctx.arc(radius * 0.75, radius * 0.2, radius * 0.15, 0, Math.PI * 0.5);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Criar Inimigo
+        function spawnEnemy() {
+            const isFromLeft = Math.random() < 0.5;
+            const x = isFromLeft ? -100 : canvas.width + 100;
+            const y = Math.random() * canvas.height;
+            
+            // Referência de tamanho baseada nos jogadores vivos
+            let refRadius = 15;
+            const alivePlayers = players.filter(p => p.alive);
+            if (alivePlayers.length > 0) {
+                refRadius = Math.max(...alivePlayers.map(p => p.radius));
+            }
+
+            let radius;
+            if (Math.random() < 0.7) {
+                // Presa (Menor)
+                radius = refRadius * (Math.random() * 0.6 + 0.2); 
+            } else {
+                // Predador (Maior)
+                radius = refRadius * (Math.random() * 1.5 + 1.1);
+            }
+            
+            radius = Math.max(5, Math.min(radius, canvas.height / 3));
+            const color = enemyColors[Math.floor(Math.random() * enemyColors.length)];
+            
+            // A velocidade é inversamente proporcional ao tamanho
+            let baseSpeed = (Math.random() * 2 + 1) * (15 / Math.max(10, radius));
+            
+            // *MUDANÇA*: Aumentar a velocidade se for um peixe grande (predador)
+            if (radius > refRadius) {
+                baseSpeed *= 1.6; 
+            }
+
+            const dx = isFromLeft ? baseSpeed : -baseSpeed;
+            const waveSpeed = Math.random() * 0.05 + 0.02;
+            const waveAmplitude = Math.random() * 2 + 0.5;
+
+            enemies.push({
+                x, y, radius, color, dx, 
+                facingLeft: !isFromLeft,
+                startY: y,
+                waveSpeed,
+                waveAmplitude,
+                seed: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Sistema de Bolhas
+        function initBubbles() {
+            bubbles = [];
+            for (let i = 0; i < 30; i++) {
+                bubbles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 4 + 1,
+                    speed: Math.random() * 1 + 0.5,
+                    oscillation: Math.random() * 2,
+                    seed: Math.random() * 100
+                });
+            }
+        }
+
+        function updateAndDrawBubbles() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            bubbles.forEach(bubble => {
+                bubble.y -= bubble.speed;
+                bubble.x += Math.sin(frameCount * 0.02 + bubble.seed) * bubble.oscillation;
+
+                if (bubble.y + bubble.radius < 0) {
+                    bubble.y = canvas.height + bubble.radius;
+                    bubble.x = Math.random() * canvas.width;
+                }
+
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Função auxiliar para movimento do teclado
+        function handleKeyboardMovement(p, up, down, left, right) {
+            let dx = 0;
+            let dy = 0;
+            if (keys[up]) dy -= 1;
+            if (keys[down]) dy += 1;
+            if (keys[left]) dx -= 1;
+            if (keys[right]) dx += 1;
+
+            if (dx !== 0 && dy !== 0) {
+                const length = Math.sqrt(dx*dx + dy*dy);
+                dx /= length;
+                dy /= length;
+            }
+
+            const speedFactor = 15 / Math.max(10, p.radius);
+            p.x += dx * p.moveSpeed * speedFactor;
+            p.y += dy * p.moveSpeed * speedFactor;
+
+            if (dx > 0) p.facingLeft = false;
+            else if (dx < 0) p.facingLeft = true;
+        }
+
+        // Atualizar Lógica do Jogo
+        function update() {
+            // Atualizar Jogadores
+            players.forEach(p => {
+                if (!p.alive) return;
+
+                if (p.id === 1) {
+                    if (!isMultiplayer) {
+                        // P1 (1 Jogador): Rato / Touch
+                        const dx = targetX - p.x;
+                        p.x += dx * p.speed;
+                        p.y += (targetY - p.y) * p.speed;
+
+                        if (dx > 1) p.facingLeft = false;
+                        else if (dx < -1) p.facingLeft = true;
+                    } else {
+                        // P1 (2 Jogadores): Setas do Teclado
+                        handleKeyboardMovement(p, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
+                    }
+                } else if (p.id === 2) {
+                    // P2 (2 Jogadores): WASD
+                    handleKeyboardMovement(p, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
+                }
+
+                // Limitar ao ecrã
+                p.x = Math.max(p.radius, Math.min(canvas.width - p.radius, p.x));
+                p.y = Math.max(p.radius, Math.min(canvas.height - p.radius, p.y));
+            });
+
+            // Atualizar e Remover Inimigos, e Checar Colisões
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                enemy.x += enemy.dx;
+                enemy.y = enemy.startY + Math.sin(frameCount * enemy.waveSpeed + enemy.seed) * enemy.waveAmplitude;
+
+                if (enemy.x < -150 || enemy.x > canvas.width + 150) {
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                let enemyEaten = false;
+
+                for (let j = 0; j < players.length; j++) {
+                    const p = players[j];
+                    if (!p.alive) continue;
+
+                    const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
+                    const sumRadii = (p.radius + enemy.radius) * 0.8;
+
+                    if (dist < sumRadii) {
+                        if (p.radius >= enemy.radius * 0.95) {
+                            // *MUDANÇA*: Crescimento mais rápido (multiplicador de 0.05 passou para 0.1)
+                            const growth = enemy.radius * 0.1 * (15 / p.radius); 
+                            p.radius += Math.max(0.1, growth);
+                            p.score += Math.floor(enemy.radius);
+                            
+                            updateScoresUI();
+                            enemies.splice(i, 1);
+                            enemyEaten = true;
+                            
+                            // Efeito de dentada no alvo do P1 (apenas se usar o rato)
+                            if (p.id === 1 && !isMultiplayer) {
+                                targetX += (Math.random() - 0.5) * 10;
+                                targetY += (Math.random() - 0.5) * 10;
+                            }
+                            break; // Se comeu o inimigo, sai do loop de jogadores
+                        } else {
+                            // Foi comido
+                            p.alive = false;
+                        }
+                    }
+                }
+            }
+
+            // Verificar se todos morreram
+            if (players.every(p => !p.alive)) {
+                endGame();
+                return;
+            }
+
+            // Gerar novos inimigos
+            const maxEnemies = Math.floor(canvas.width / 100);
+            if (enemies.length < maxEnemies && Math.random() < 0.02) {
+                spawnEnemy();
+            }
+        }
+
+        // Desenhar tudo
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateAndDrawBubbles();
+
+            // Desenhar inimigos
+            enemies.sort((a, b) => a.radius - b.radius);
+            enemies.forEach(enemy => {
+                drawFish(enemy.x, enemy.y, enemy.radius, enemy.color, enemy.facingLeft);
+            });
+
+            // Desenhar Jogadores vivos
+            players.forEach(p => {
+                if (p.alive) {
+                    drawFish(p.x, p.y, p.radius, p.color, p.facingLeft, true, p.id);
+                }
+            });
+        }
+
+        // Loop Principal
+        function gameLoop() {
+            if (gameState === 'PLAYING') {
+                update();
+                draw();
+                frameCount++;
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Controlos de Estado do Jogo
+        function startGame(multi) {
+            gameState = 'PLAYING';
+            enemies = [];
+            initPlayers(multi);
+            initBubbles();
+            frameCount = 0;
+            
+            startMenu.classList.add('hidden');
+            gameOverMenu.classList.add('hidden');
+            gameOverMenu.classList.remove('opacity-100');
+            gameOverMenu.classList.add('opacity-0');
+            pauseMenu.classList.add('hidden');
+            hud.classList.remove('hidden');
+
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseMenu.classList.remove('hidden');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseMenu.classList.add('hidden');
+                gameLoop();
+            }
+        }
+
+        function returnToMenu() {
+            gameState = 'START';
+            cancelAnimationFrame(animationId);
+            pauseMenu.classList.add('hidden');
+            gameOverMenu.classList.add('hidden');
+            hud.classList.add('hidden');
+            startMenu.classList.remove('hidden');
+            drawMenuBackground();
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            cancelAnimationFrame(animationId);
+            
+            finalScoreP1.innerText = players[0] ? players[0].score : 0;
+            if (isMultiplayer) {
+                finalScoreP2.innerText = players[1] ? players[1].score : 0;
+            }
+            hud.classList.add('hidden');
+            
+            gameOverMenu.classList.remove('hidden');
+            setTimeout(() => {
+                gameOverMenu.classList.remove('opacity-0');
+                gameOverMenu.classList.add('opacity-100');
+            }, 10);
+        }
+
+        // Event Listeners dos Botões
+        start1PBtn.addEventListener('click', () => startGame(false));
+        start2PBtn.addEventListener('click', () => startGame(true));
+        restartBtn.addEventListener('click', () => startGame(isMultiplayer));
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+        menuBtnFromPause.addEventListener('click', returnToMenu);
+        menuBtnFromOver.addEventListener('click', returnToMenu);
+
+        // Permitir pausar com tecla ESC ou P
+        window.addEventListener('keydown', (e) => {
+            if ((e.code === 'Escape' || e.code === 'KeyP') && (gameState === 'PLAYING' || gameState === 'PAUSED')) {
+                togglePause();
+            }
+        });
+
+        // Ecrã inicial animado
+        initBubbles();
+        function drawMenuBackground() {
+            if(gameState === 'START') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                updateAndDrawBubbles();
+                frameCount++;
+                
+                dummyMenuPlayer.x = canvas.width/2 + Math.cos(frameCount * 0.01) * 50;
+                dummyMenuPlayer.y = canvas.height/2 + Math.sin(frameCount * 0.02) * 30;
+                dummyMenuPlayer.facingLeft = Math.cos(frameCount * 0.01) < 0;
+                
+                drawFish(dummyMenuPlayer.x, dummyMenuPlayer.y, dummyMenuPlayer.radius, dummyMenuPlayer.color, dummyMenuPlayer.facingLeft, true, 1);
+                
+                requestAnimationFrame(drawMenuBackground);
+            }
+        }
+        drawMenuBackground();
+
+    </script>
+</body>
+</html>
