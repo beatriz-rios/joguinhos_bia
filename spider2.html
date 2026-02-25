@@ -9,10 +9,10 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-            background-color: #a6a9ac;
+            background-color: #a0a3a5;
             overflow: hidden; /* Evita barras de rolagem */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            cursor: crosshair; /* Cursor de alvo para atrair as aranhas */
+            cursor: none; /* Esconde o cursor padrão para usarmos o mosquito */
             position: relative;
         }
 
@@ -44,6 +44,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             z-index: 1000;
             transition: background-color 0.2s, transform 0.2s;
+            pointer-events: auto;
         }
 
         #btn-limpar:hover {
@@ -55,7 +56,65 @@
             transform: translateX(-50%) scale(0.95);
         }
 
-        /* Estilização da Aranha */
+        /* --- ESTILIZAÇÃO DO MOSQUITO (CURSOR) --- */
+        #mosquito {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            pointer-events: none; /* Para não atrapalhar os cliques na tela */
+            z-index: 2000; /* Fica acima de tudo, inclusive das aranhas */
+            will-change: transform;
+        }
+
+        /* Corpo do Mosquito */
+        .mosq-body {
+            position: absolute;
+            width: 4px;
+            height: 14px;
+            background-color: #2c3e50;
+            border-radius: 40%;
+            top: 0;
+            left: 5px;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        /* Asas do Mosquito */
+        .mosq-wing {
+            position: absolute;
+            width: 12px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            top: 3px;
+        }
+
+        /* Asa Esquerda */
+        .mosq-wing.left {
+            right: 7px;
+            transform-origin: center right;
+            animation: flapLeft 0.25s infinite alternate ease-in-out; /* Batimento lento */
+        }
+
+        /* Asa Direita */
+        .mosq-wing.right {
+            left: 7px;
+            transform-origin: center left;
+            animation: flapRight 0.25s infinite alternate ease-in-out; /* Batimento lento */
+        }
+
+        /* Animações das Asas do Mosquito */
+        @keyframes flapLeft {
+            0% { transform: rotate(-10deg); }
+            100% { transform: rotate(-60deg); }
+        }
+        @keyframes flapRight {
+            0% { transform: rotate(10deg); }
+            100% { transform: rotate(60deg); }
+        }
+
+
+        /* --- ESTILIZAÇÃO DA ARANHA --- */
         .spider {
             position: absolute;
             width: 40px;
@@ -140,6 +199,13 @@
     <!-- Canvas onde o rastro (teia) será desenhado -->
     <canvas id="trail-canvas"></canvas>
 
+    <!-- Mosquito que substitui o cursor -->
+    <div id="mosquito">
+        <div class="mosq-wing left"></div>
+        <div class="mosq-wing right"></div>
+        <div class="mosq-body"></div>
+    </div>
+
     <script>
         // Array para guardar todas as aranhas no ecrã
         const spiders = [];
@@ -147,6 +213,9 @@
         // Posição inicial do rato (centro do ecrã)
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
+
+        // Elemento do mosquito
+        const mosquito = document.getElementById('mosquito');
 
         // Configuração do Canvas para a teia
         const canvas = document.getElementById('trail-canvas');
@@ -159,10 +228,16 @@
         window.addEventListener('resize', redimensionarCanvas);
         redimensionarCanvas();
 
+        // Inicializa o mosquito no centro
+        mosquito.style.transform = `translate(${mouseX - 7}px, ${mouseY - 7}px)`;
+
         // Atualiza a posição do alvo (rato/mouse)
         window.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
+            
+            // Move o mosquito para seguir o cursor. (Subtrai 7px para centralizar o mosquito de 14x14)
+            mosquito.style.transform = `translate(${mouseX - 7}px, ${mouseY - 7}px)`;
         });
 
         // Função para criar uma nova aranha
@@ -229,6 +304,9 @@
             
             // Limpa todo o rastro desenhado no canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Evita que o clique no botão vaze para o window
+            e.stopPropagation();
         });
 
         // Loop de Animação para fazer as aranhas seguirem o rato
@@ -238,7 +316,7 @@
                 const dy = mouseY - spider.y;
                 const dist = Math.hypot(dx, dy);
 
-                // Se a aranha estiver longe do rato, ela anda
+                // Se a aranha estiver longe do rato (mosquito), ela anda
                 if (dist > 10) {
                     // Guarda a posição antes de se mover para criar a linha
                     spider.prevX = spider.x;
