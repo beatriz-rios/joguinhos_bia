@@ -39,10 +39,10 @@
         <!-- Pontuações -->
         <div class="flex flex-col gap-2">
             <div class="glass-panel px-4 py-2 rounded-full text-lg font-bold shadow-lg w-max pointer-events-auto">
-                <span class="text-orange-400">P1:</span> <span id="scoreDisplay" class="text-white">0</span>
+                <span class="text-white drop-shadow-md">P1:</span> <span id="scoreDisplay" class="text-white">0</span>
             </div>
             <div id="p2ScorePanel" class="glass-panel px-4 py-2 rounded-full text-lg font-bold shadow-lg w-max hidden pointer-events-auto">
-                <span class="text-cyan-400">P2:</span> <span id="scoreDisplayP2" class="text-white">0</span>
+                <span class="text-gray-900 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]">P2:</span> <span id="scoreDisplayP2" class="text-white">0</span>
             </div>
         </div>
         
@@ -68,12 +68,12 @@
             <div class="flex justify-center gap-4 mb-6">
                 <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
                     <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">1 Jogador</span>
-                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Rato/Toque</span>
+                    <span class="text-sm text-gray-200 mt-1"><span class="text-white font-bold drop-shadow-md">P1:</span> Rato/Toque</span>
                 </div>
                 <div class="flex flex-col items-center bg-black/30 px-4 py-3 rounded-xl">
                     <span class="text-white font-bold mb-1 border-b border-white/20 pb-1 w-full text-center">2 Jogadores</span>
-                    <span class="text-sm text-gray-200 mt-1"><span class="text-orange-400 font-bold">P1:</span> Setas</span>
-                    <span class="text-sm text-gray-200"><span class="text-cyan-400 font-bold">P2:</span> WASD</span>
+                    <span class="text-sm text-gray-200 mt-1"><span class="text-white font-bold drop-shadow-md">P1:</span> Setas</span>
+                    <span class="text-sm text-gray-200"><span class="text-gray-900 font-bold drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]">P2:</span> WASD</span>
                 </div>
             </div>
 
@@ -113,11 +113,11 @@
             <div class="bg-black/30 rounded-xl p-4 mb-8 flex justify-center gap-6">
                 <div class="text-center">
                     <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">P1</p>
-                    <p id="finalScoreP1" class="text-4xl font-black text-orange-400 drop-shadow-lg">0</p>
+                    <p id="finalScoreP1" class="text-4xl font-black text-white drop-shadow-lg">0</p>
                 </div>
                 <div id="finalScoreP2Container" class="text-center hidden border-l border-white/20 pl-6">
                     <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">P2</p>
-                    <p id="finalScoreP2" class="text-4xl font-black text-cyan-400 drop-shadow-lg">0</p>
+                    <p id="finalScoreP2" class="text-4xl font-black text-gray-900 drop-shadow-[0_0_3px_rgba(255,255,255,0.8)]">0</p>
                 </div>
             </div>
 
@@ -174,7 +174,8 @@
         let players = [];
         let enemies = [];
         let bubbles = [];
-        let dummyMenuPlayer = { x: 0, y: 0, radius: 30, color: '#ff8c00', facingLeft: false };
+        // Jogador do menu agora é branco
+        let dummyMenuPlayer = { x: 0, y: 0, radius: 30, color: '#ffffff', facingLeft: false };
 
         // Teclado
         const keys = {};
@@ -229,23 +230,23 @@
             isMultiplayer = multi;
             players = [];
             
-            // P1 (Laranja)
+            // P1 (Branco)
             players.push({
                 id: 1,
                 alive: true,
                 x: canvas.width / 2 - (multi ? 50 : 0),
                 y: canvas.height / 2,
                 radius: 15,
-                color: '#ff8c00', 
-                speed: 0.1, // lerp do rato (para 1 Jogador)
-                moveSpeed: 5, // velocidade base do teclado (para 2 Jogadores)
+                color: '#ffffff', 
+                speed: 0.18, // lerp do rato aumentado
+                moveSpeed: 8, // velocidade base do teclado aumentada
                 facingLeft: false,
                 score: 0
             });
             targetX = players[0].x;
             targetY = players[0].y;
 
-            // P2 (Azul - Controlado por Teclado)
+            // P2 (Preto - Controlado por Teclado)
             if (multi) {
                 players.push({
                     id: 2,
@@ -253,8 +254,8 @@
                     x: canvas.width / 2 + 50,
                     y: canvas.height / 2,
                     radius: 15,
-                    color: '#00ccff', 
-                    moveSpeed: 5, // velocidade base do teclado
+                    color: '#000000', 
+                    moveSpeed: 8, // velocidade base do teclado aumentada
                     facingLeft: false,
                     score: 0
                 });
@@ -381,7 +382,7 @@
             // A velocidade é inversamente proporcional ao tamanho
             let baseSpeed = (Math.random() * 2 + 1) * (15 / Math.max(10, radius));
             
-            // *MUDANÇA*: Aumentar a velocidade se for um peixe grande (predador)
+            // Aumentar a velocidade se for um peixe grande (predador)
             if (radius > refRadius) {
                 baseSpeed *= 1.6; 
             }
@@ -507,10 +508,12 @@
 
                     if (dist < sumRadii) {
                         if (p.radius >= enemy.radius * 0.95) {
-                            // *MUDANÇA*: Crescimento mais rápido (multiplicador de 0.05 passou para 0.1)
+                            // Crescimento do peixe
                             const growth = enemy.radius * 0.1 * (15 / p.radius); 
                             p.radius += Math.max(0.1, growth);
-                            p.score += Math.floor(enemy.radius);
+                            
+                            // AUMENTO DA PONTUAÇÃO MAIS RÁPIDO (x5)
+                            p.score += Math.floor(enemy.radius) * 5;
                             
                             updateScoresUI();
                             enemies.splice(i, 1);
@@ -630,10 +633,10 @@
                 // Mostrar o vencedor com base nos pontos
                 if (p1Score > p2Score) {
                     winnerText.innerText = '🏆 P1 Venceu!';
-                    winnerText.className = 'text-3xl font-extrabold text-orange-400 mb-2 drop-shadow-lg';
+                    winnerText.className = 'text-3xl font-extrabold text-white mb-2 drop-shadow-lg';
                 } else if (p2Score > p1Score) {
                     winnerText.innerText = '🏆 P2 Venceu!';
-                    winnerText.className = 'text-3xl font-extrabold text-cyan-400 mb-2 drop-shadow-lg';
+                    winnerText.className = 'text-3xl font-extrabold text-gray-900 mb-2 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]';
                 } else {
                     winnerText.innerText = '🤝 Empate!';
                     winnerText.className = 'text-3xl font-extrabold text-yellow-400 mb-2 drop-shadow-lg';
