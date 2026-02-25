@@ -10,31 +10,44 @@
             --cat-detail: #f39c12;
             --wool-color: #e74c3c;
             --eye-color: white;
+            --mouse-color: #333;
         }
 
         /* Skins de Cores */
         .skin-laranja { --cat-color: #f39c12; --cat-detail: #f39c12; --eye-color: rgb(255, 215, 36); }
         .skin-preto { --cat-color: #2c3e50; --cat-detail: #2c3e50; --eye-color: #f1c40f; } 
         .skin-cinza { --cat-color: #95a5a6; --cat-detail: #95a5a6; --eye-color: rgb(247, 243, 36); }
-        .skin-listrado { --cat-color: #95a5a6; --cat-detail: #7f8c8d; --eye-color: rgb(56, 165, 228); }
-        .skin-branco { --cat-color: #ffffff; --cat-detail: #e9d9d9; --eye-color: rgb(91, 153, 247); }
+        .skin-branco { --cat-color: #ffffff; --cat-detail: #ffffff; --eye-color: rgb(91, 153, 247); }
         
-        /* Gato Frajola com mancha branca oval na barriga */
+        /* Skin Listrada - Apenas no corpo */
+        .skin-listrado { --cat-color: #95a5a6; --cat-detail: #7f8c8d; --eye-color: rgb(56, 165, 228); }
+        .skin-listrado .cat-body {
+            background: repeating-linear-gradient(
+                0deg,
+                #95a5a6,
+                #95a5a6 6px,
+                #7f8c8d 6px,
+                #7f8c8d 10px
+            ) !important;
+        }
+        /* Cabeça limpa sem listras */
+        .skin-listrado .cat-head {
+            background-color: var(--cat-color) !important;
+            background-image: none !important;
+        }
+
         .skin-frajola { 
             --cat-color: #222; 
             --cat-detail: #fff; 
             --eye-color: rgb(122, 197, 35); 
         }
         .skin-frajola .cat-body {
-            /* Cria uma mancha branca oval centralizada rodeada de preto */
             background: radial-gradient(ellipse at center, #fff 35%, #222 36%) !important;
         }
         .skin-frajola .cat-head {
-            /* Detalhe branco no focinho */
             background: radial-gradient(circle at center bottom, #fff 30%, #222 31%) !important;
         }
 
-        /* Gato Tricolor com manchinhas e OLHOS AMARELOS */
         .skin-tricolor { 
             --cat-color: #f39c12; 
             --cat-detail: #2c3e50; 
@@ -70,20 +83,48 @@
             z-index: 100;
         }
 
-        #wool-cursor {
+        #lure-container {
             position: fixed;
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            will-change: transform;
+        }
+
+        #wool-ball {
             width: 36px;
             height: 36px;
             background-color: var(--wool-color);
             border-radius: 50%;
-            pointer-events: none;
-            z-index: 2000;
             box-shadow: inset -5px -5px 12px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
             background-image: 
                 repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px),
                 repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 4px);
-            will-change: transform;
         }
+
+        #mouse-lure {
+            position: relative;
+            width: 28px;
+            height: 16px;
+            background-color: var(--mouse-color);
+            border-radius: 50% 50% 40% 40%;
+            display: none;
+        }
+        #mouse-lure::before, #mouse-lure::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #444;
+            border-radius: 50%;
+            top: -4px;
+        }
+        #mouse-lure::before { left: 2px; }
+        #mouse-lure::after { right: 2px; }
 
         #cat {
             position: fixed;
@@ -106,10 +147,6 @@
             z-index: 5;
             transition: background-color 0.3s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .skin-listrado .cat-body {
-            background-image: repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0, 0, 0, 0.15) 8px, rgba(0, 0, 0, 0.15) 11px);
         }
 
         .cat-head {
@@ -172,21 +209,12 @@
         .paw.front-l { left: 8px; }
         .paw.front-r { right: 8px; }
         
-        .moving .paw.front-l { animation: step 0.2s infinite alternate; }
-        .moving .paw.front-r { animation: step 0.2s infinite alternate-reverse; }
+        .moving .paw.front-l { animation: passo 0.2s infinite alternate; }
+        .moving .paw.front-r { animation: passo 0.2s infinite alternate-reverse; }
 
-        @keyframes step {
+        @keyframes passo {
             from { transform: translateY(0); }
             to { transform: translateY(-8px); }
-        }
-
-        .tail-anchor {
-            position: absolute;
-            top: 50px;
-            left: 20px;
-            width: 1px;
-            height: 1px;
-            z-index: 2;
         }
 
         #speech-bubble {
@@ -196,6 +224,7 @@
             border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             font-size: 14px;
+            font-weight: bold;
             max-width: 150px;
             z-index: 2500;
             display: none;
@@ -210,17 +239,31 @@
             border-top-color: white;
         }
 
-        .color-menu {
+        .ui-left {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 3000;
+        }
+
+        .ui-right {
             position: fixed;
             bottom: 20px;
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-end;
+            z-index: 3000;
+        }
+
+        .color-menu {
             display: flex;
             gap: 10px;
             background: rgba(255, 255, 255, 0.95);
             padding: 10px 15px;
             border-radius: 35px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 3000;
         }
 
         .color-option {
@@ -242,39 +285,49 @@
         .opt-branco { background-color: #ffffff; border: 1px solid #ddd; }
         .opt-tricolor { background: conic-gradient(#f39c12 0% 33%, #fff 33% 66%, #2c3e50 66% 100%); }
 
-        #ai-button {
-            position: fixed;
-            bottom: 85px;
-            right: 20px;
-            padding: 10px 20px;
+        .btn-action {
+            padding: 12px 20px;
             background: #6200ee;
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 25px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 3000;
+            transition: 0.2s;
         }
+        .btn-action:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn-lure { background: #e74c3c; }
+
     </style>
 </head>
 <body class="skin-laranja">
 
     <div id="speech-bubble">Miau!</div>
-    <button id="ai-button" onclick="askCatSomething()">😺 Me conte algo!</button>
+    
+    <div class="ui-left">
+        <button id="lure-toggle" class="btn-action btn-lure" onclick="alternarIsca()">🐁 Trocar Isca</button>
+    </div>
 
-    <div class="color-menu" id="colorMenu">
-        <div class="color-option opt-laranja active" data-skin="skin-laranja" title="Laranja"></div>
-        <div class="color-option opt-frajola" data-skin="skin-frajola" title="Frajola"></div>
-        <div class="color-option opt-preto" data-skin="skin-preto" title="Preto"></div>
-        <div class="color-option opt-cinza" data-skin="skin-cinza" title="Cinza"></div>
-        <div class="color-option opt-listrado" data-skin="skin-listrado" title="Listrado"></div>
-        <div class="color-option opt-branco" data-skin="skin-branco" title="Branco"></div>
-        <div class="color-option opt-tricolor" data-skin="skin-tricolor" title="Tricolor"></div>
+    <div class="ui-right">
+        <button id="meow-button" class="btn-action" onclick="fazerOGatoMiar('Miau!')">🐱 MiaU!</button>
+        <div class="color-menu" id="colorMenu">
+            <div class="color-option opt-laranja active" data-skin="skin-laranja" title="Laranja"></div>
+            <div class="color-option opt-frajola" data-skin="skin-frajola" title="Frajola"></div>
+            <div class="color-option opt-preto" data-skin="skin-preto" title="Preto"></div>
+            <div class="color-option opt-cinza" data-skin="skin-cinza" title="Cinza"></div>
+            <div class="color-option opt-listrado" data-skin="skin-listrado" title="Listrado"></div>
+            <div class="color-option opt-branco" data-skin="skin-branco" title="Branco"></div>
+            <div class="color-option opt-tricolor" data-skin="skin-tricolor" title="Tricolor"></div>
+        </div>
     </div>
 
     <canvas id="game-canvas"></canvas>
-    <div id="wool-cursor"></div>
+    
+    <div id="lure-container">
+        <div id="wool-ball"></div>
+        <div id="mouse-lure"></div>
+    </div>
 
     <div id="cat">
         <div class="cat-body">
@@ -291,30 +344,42 @@
     </div>
 
     <script>
-        const apiKey = ""; 
         const cat = document.getElementById('cat');
-        const wool = document.getElementById('wool-cursor');
+        const containerIsca = document.getElementById('lure-container');
+        const noveloDeLa = document.getElementById('wool-ball');
+        const iscaRato = document.getElementById('mouse-lure');
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         const speechBubble = document.getElementById('speech-bubble');
         
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
+        let mouseXOld = mouseX;
         let catX = mouseX;
         let catY = mouseY;
         let catAngle = 0;
-        let currentSkinName = "Laranja";
+        let iscaAtual = 'wool';
 
         const gravity = 0.4;
         const friction = 0.92;
 
-        const ropeSegments = 12;
-        const ropeLength = 6;
-        const ropePoints = Array.from({length: ropeSegments}, () => ({x: mouseX, y: mouseY, oldX: mouseX, oldY: mouseY}));
-
+        let ropePoints = Array.from({length: 12}, () => ({x: mouseX, y: mouseY, oldX: mouseX, oldY: mouseY}));
         const tailSegments = 8;
-        const tailSegLength = 5;
         const tailPoints = Array.from({length: tailSegments}, () => ({x: catX, y: catY, oldX: catX, oldY: catY}));
+
+        let speechTimeout = null;
+
+        // Função unificada para miau (Apenas Texto agora)
+        function fazerOGatoMiar(texto = "Miau!") {
+            speechBubble.innerText = texto;
+            speechBubble.style.display = 'block';
+
+            if (speechTimeout) clearTimeout(speechTimeout);
+            speechTimeout = setTimeout(() => { speechBubble.style.display = 'none'; }, 2000);
+        }
+
+        // Clique no próprio gato
+        cat.addEventListener('click', () => fazerOGatoMiar("Miau!"));
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -324,16 +389,41 @@
         resize();
 
         window.addEventListener('mousemove', (e) => {
+            mouseXOld = mouseX;
             mouseX = e.clientX;
             mouseY = e.clientY;
-            wool.style.left = (mouseX - 18) + 'px';
-            wool.style.top = (mouseY - 18) + 'px';
+            containerIsca.style.left = (mouseX - 20) + 'px';
+            containerIsca.style.top = (mouseY - 20) + 'px';
+        });
+
+        function alternarIsca() {
+            if (iscaAtual === 'wool') {
+                iscaAtual = 'mouse';
+                noveloDeLa.style.display = 'none';
+                iscaRato.style.display = 'block';
+                ropePoints = Array.from({length: 6}, () => ({x: mouseX, y: mouseY, oldX: mouseX, oldY: mouseY}));
+                fazerOGatoMiar("OBA! RATO!");
+            } else {
+                iscaAtual = 'wool';
+                noveloDeLa.style.display = 'block';
+                iscaRato.style.display = 'none';
+                ropePoints = Array.from({length: 12}, () => ({x: mouseX, y: mouseY, oldX: mouseX, oldY: mouseY}));
+                fazerOGatoMiar("QUERO O NOVELO!");
+            }
+        }
+
+        document.getElementById('colorMenu').addEventListener('click', (e) => {
+            const opt = e.target.closest('.color-option');
+            if (!opt) return;
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            document.body.className = opt.dataset.skin;
+            fazerOGatoMiar("Miau fofo!");
         });
 
         function updatePhysics(points, targetX, targetY, segLen) {
             points[0].x = targetX;
             points[0].y = targetY;
-
             for (let i = 1; i < points.length; i++) {
                 let p = points[i];
                 let vx = (p.x - p.oldX) * friction;
@@ -342,7 +432,6 @@
                 p.x += vx;
                 p.y += vy + gravity;
             }
-
             for (let n = 0; n < 5; n++) {
                 for (let i = 0; i < points.length - 1; i++) {
                     let p1 = points[i], p2 = points[i+1];
@@ -350,17 +439,18 @@
                     let dist = Math.hypot(dx, dy);
                     if (dist === 0) continue;
                     let diff = segLen - dist;
-                    let percent = (diff / dist) / 2;
-                    let ox = dx * percent, oy = dy * percent;
+                    let ox = (dx * (diff / dist)) / 2;
+                    let oy = (dy * (diff / dist)) / 2;
                     if (i !== 0) { p1.x -= ox; p1.y -= oy; }
                     p2.x += ox; p2.y += oy;
                 }
             }
         }
 
-        function drawPath(points, color, width, dashPattern = []) {
+        function drawPath(points, color, width, dash = []) {
+            if (points.length < 2) return;
             ctx.beginPath();
-            ctx.setLineDash(dashPattern);
+            ctx.setLineDash(dash);
             ctx.moveTo(points[0].x, points[0].y);
             for (let i = 1; i < points.length - 1; i++) {
                 const xc = (points[i].x + points[i + 1].x) / 2;
@@ -374,55 +464,6 @@
             ctx.stroke();
             ctx.setLineDash([]);
         }
-
-        function drawTailTip(points, color, width) {
-            const lastIdx = points.length - 1;
-            const secondLastIdx = points.length - 2;
-            ctx.beginPath();
-            ctx.moveTo(points[secondLastIdx].x, points[secondLastIdx].y);
-            ctx.lineTo(points[lastIdx].x, points[lastIdx].y);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = width;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-        }
-
-        async function getCatSpeech(prompt) {
-            const systemPrompt = "Você é um gato brincalhão. Responda em português como um gato, curto e fofo (máximo 12 palavras).";
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] }
-                    })
-                });
-                const data = await response.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Miau!";
-            } catch (err) { return "Purrr!"; }
-        }
-
-        function showSpeech(text) {
-            speechBubble.innerText = text;
-            speechBubble.style.display = 'block';
-            setTimeout(() => { speechBubble.style.display = 'none'; }, 3000);
-        }
-
-        window.askCatSomething = async () => {
-            const s = await getCatSpeech("Diga algo sobre o seu dia.");
-            showSpeech(s);
-        };
-
-        document.getElementById('colorMenu').addEventListener('click', (e) => {
-            const opt = e.target.closest('.color-option');
-            if (!opt) return;
-            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
-            opt.classList.add('active');
-            document.body.className = opt.dataset.skin;
-            currentSkinName = opt.title;
-            showSpeech(`Miau! Agora sou ${currentSkinName}!`);
-        });
 
         function animate() {
             const speed = 0.05;
@@ -444,34 +485,31 @@
             const tailAnchorX = catX - Math.cos(catAngle) * 15;
             const tailAnchorY = catY - Math.sin(catAngle) * 15;
 
-            updatePhysics(ropePoints, mouseX, mouseY, ropeLength);
-            updatePhysics(tailPoints, tailAnchorX, tailAnchorY, tailSegLength);
+            updatePhysics(ropePoints, mouseX, mouseY, iscaAtual === 'wool' ? 6 : 5);
+            updatePhysics(tailPoints, tailAnchorX, tailAnchorY, 5);
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPath(ropePoints, '#e74c3c', 3);
+            drawPath(ropePoints, iscaAtual === 'wool' ? '#e74c3c' : '#555', iscaAtual === 'wool' ? 3 : 2);
 
-            const rootStyle = getComputedStyle(document.documentElement);
             const bodyClass = document.body.className;
-            const catColor = rootStyle.getPropertyValue('--cat-color').trim();
+            // Pegamos a cor configurada no `body` da skin atual, em vez do `documentElement` (raiz)
+            const catColor = getComputedStyle(document.body).getPropertyValue('--cat-color').trim();
 
+            // Desenhar cauda
             if (bodyClass === 'skin-listrado') {
                 drawPath(tailPoints, '#95a5a6', 8);
                 drawPath(tailPoints, '#7f8c8d', 8, [5, 10]); 
             } else if (bodyClass === 'skin-frajola') {
-                drawPath(tailPoints, '#222', 8);
-                drawTailTip(tailPoints, '#fff', 8);
+                drawPath(tailPoints, '#222', 8); // Cauda inteira preta
+                // Separa os 3 últimos pontos para pintar a pontinha de branco
+                const tipPoints = tailPoints.slice(-3);
+                drawPath(tipPoints, '#fff', 8);
             } else if (bodyClass === 'skin-tricolor') {
-                // Cauda tricolor com manchas brancas e pretas
                 drawPath(tailPoints, '#f39c12', 8);
                 drawPath(tailPoints, '#ffffff', 8, [10, 20]);
                 drawPath(tailPoints, '#2c3e50', 8, [5, 25]);
-            } else if (bodyClass === 'skin-preto') {
-                drawPath(tailPoints, '#2c3e50', 8);
-            } else if (bodyClass === 'skin-cinza') {
-                drawPath(tailPoints, '#95a5a6', 8);
-            } else if (bodyClass === 'skin-branco') {
-                drawPath(tailPoints, '#ffffff', 8);
             } else {
+                // Aplica cor dinâmica para Preto, Branco, Cinza e Laranja baseada na skin ativa
                 drawPath(tailPoints, catColor, 8);
             }
 
@@ -480,7 +518,6 @@
 
             requestAnimationFrame(animate);
         }
-
         animate();
     </script>
 </body>
