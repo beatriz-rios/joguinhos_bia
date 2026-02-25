@@ -3,197 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aranha Perseguidora com Rastro</title>
+    <title>Aranha Seguinte</title>
     <style>
-        :root {
-            --spider-color: #111;
-            --eye-color: #ff0000;
-            --trail-color: rgba(0, 0, 0, 0.4);
-        }
-
         body {
             margin: 0;
             padding: 0;
             height: 100vh;
-            background-color: #696767;
-            overflow: hidden;
-            cursor: none; /* Esconde o cursor para a aranha ser o foco */
-            font-family: sans-serif;
+            background-color: #a6a9ac;
+            overflow: hidden; /* Evita barras de rolagem */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: crosshair; /* Cursor de alvo para atrair as aranhas */
+            position: relative;
         }
 
-        /* Container da Aranha */
-        #spider {
-            position: fixed;
-            width: 40px;
-            height: 45px;
-            z-index: 1000;
-            pointer-events: none;
-            will-change: transform;
-        }
-
-        /* Corpo Principal */
-        .spider-body {
+        /* Canvas para desenhar o rastro (teia) */
+        #trail-canvas {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--spider-color);
-            border-radius: 50% 50% 45% 45%;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-
-        /* Olhos */
-        .spider-body::before, .spider-body::after {
-            content: '';
-            position: absolute;
-            top: 8px;
-            width: 5px;
-            height: 7px;
-            background-color: var(--eye-color);
-            border-radius: 50%;
-            box-shadow: 0 0 5px var(--eye-color);
-        }
-        .spider-body::before { left: 10px; }
-        .spider-body::after { right: 10px; }
-
-        /* Pernas da Aranha */
-        .leg {
-            position: absolute;
-            width: 20px;
-            height: 2px;
-            background-color: var(--spider-color);
-            top: 50%;
-            transform-origin: 0% 50%;
-        }
-
-        /* Lado Esquerdo */
-        .leg.left { right: 100%; }
-        .leg.l1 { transform: rotate(140deg); animation: moveLegL 0.2s infinite alternate; }
-        .leg.l2 { transform: rotate(180deg); animation: moveLegL 0.2s infinite alternate -0.05s; }
-        .leg.l3 { transform: rotate(220deg); animation: moveLegL 0.2s infinite alternate -0.1s; }
-
-        /* Lado Direito */
-        .leg.right { left: 100%; transform-origin: 0% 50%; }
-        .leg.r1 { transform: rotate(-40deg); animation: moveLegR 0.2s infinite alternate; }
-        .leg.r2 { transform: rotate(0deg); animation: moveLegR 0.2s infinite alternate -0.05s; }
-        .leg.r3 { transform: rotate(40deg); animation: moveLegR 0.2s infinite alternate -0.1s; }
-
-        @keyframes moveLegL {
-            from { transform: rotate(140deg); }
-            to { transform: rotate(200deg); }
-        }
-        @keyframes moveLegR {
-            from { transform: rotate(-20deg); }
-            to { transform: rotate(40deg); }
-        }
-
-        /* Estilo do Rastro */
-        .trail-dot {
-            position: fixed;
-            width: 6px;
-            height: 6px;
-            background-color: var(--trail-color);
-            border-radius: 50%;
             pointer-events: none;
-            z-index: 500;
-            transition: transform 1s ease-out, opacity 1s ease-out;
+            z-index: 10; /* Fica por baixo das aranhas */
         }
 
-        .instructions {
+        /* Botão para apagar as aranhas extras */
+        #btn-limpar {
             position: absolute;
-            bottom: 20px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            color: #444;
-            pointer-events: none;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 12px;
+            padding: 12px 24px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: background-color 0.2s, transform 0.2s;
         }
+
+        #btn-limpar:hover {
+            background-color: #c0392b;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        #btn-limpar:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* Estilização da Aranha */
+        .spider {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            top: 0;
+            left: 0;
+            /* O pointer-events none faz o clique atravessar a aranha e atingir o fundo */
+            pointer-events: none; 
+            will-change: transform;
+            z-index: 50;
+        }
+
+        /* Patas da Aranha */
+        .spider-leg {
+            position: absolute;
+            width: 48px;
+            height: 2px;
+            background: #111;
+            top: 19px;
+            left: -4px;
+            border-radius: 2px;
+        }
+
+        /* Rotação inicial de cada par de patas */
+        .leg-1 { transform: rotate(25deg); }
+        .leg-2 { transform: rotate(65deg); }
+        .leg-3 { transform: rotate(115deg); }
+        .leg-4 { transform: rotate(155deg); }
+
+        /* Corpo da Aranha */
+        .spider-body {
+            position: absolute;
+            width: 16px;
+            height: 22px;
+            background: radial-gradient(circle at center, #333, #000);
+            border-radius: 50%;
+            top: 9px;
+            left: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        /* Cabeça da Aranha */
+        .spider-head {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #111;
+            border-radius: 50%;
+            top: 2px;
+            left: 14px;
+        }
+
+        /* Olhinhos vermelhos */
+        .eye {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ff3b3b;
+            border-radius: 50%;
+            top: 4px;
+        }
+        .eye-left { left: 15px; }
+        .eye-right { right: 15px; }
+
+        /* Animação das patas quando estão a andar */
+        @keyframes walk1 { 0%, 100% { transform: rotate(25deg); } 50% { transform: rotate(35deg); } }
+        @keyframes walk2 { 0%, 100% { transform: rotate(65deg); } 50% { transform: rotate(50deg); } }
+        @keyframes walk3 { 0%, 100% { transform: rotate(115deg); } 50% { transform: rotate(130deg); } }
+        @keyframes walk4 { 0%, 100% { transform: rotate(155deg); } 50% { transform: rotate(145deg); } }
+
+        .walking .leg-1 { animation: walk1 0.2s infinite; }
+        .walking .leg-2 { animation: walk2 0.2s infinite; }
+        .walking .leg-3 { animation: walk3 0.2s infinite; }
+        .walking .leg-4 { animation: walk4 0.2s infinite; }
+
     </style>
 </head>
 <body>
 
-    <div class="instructions">Mova o mouse para a aranha te seguir</div>
-
-    <div id="spider">
-        <!-- Pernas esquerdas -->
-        <div class="leg left l1"></div>
-        <div class="leg left l2"></div>
-        <div class="leg left l3"></div>
-        
-        <div class="spider-body"></div>
-        
-        <!-- Pernas direitas -->
-        <div class="leg right r1"></div>
-        <div class="leg right r2"></div>
-        <div class="leg right r3"></div>
-    </div>
+    <button id="btn-limpar">Deixar Apenas 1 Aranha</button>
+    
+    <!-- Canvas onde o rastro (teia) será desenhado -->
+    <canvas id="trail-canvas"></canvas>
 
     <script>
-        const spider = document.getElementById('spider');
+        // Array para guardar todas as aranhas no ecrã
+        const spiders = [];
+        
+        // Posição inicial do rato (centro do ecrã)
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
-        let spiderX = mouseX;
-        let spiderY = mouseY;
 
-        const speed = 0.08; 
-        let lastTrailX = 0;
-        let lastTrailY = 0;
+        // Configuração do Canvas para a teia
+        const canvas = document.getElementById('trail-canvas');
+        const ctx = canvas.getContext('2d');
 
-        // Atualiza a posição do alvo (mouse)
+        function redimensionarCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', redimensionarCanvas);
+        redimensionarCanvas();
+
+        // Atualiza a posição do alvo (rato/mouse)
         window.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
         });
 
-        // Função para criar o rastro
-        function createTrail(x, y) {
-            // Só cria rastro se a aranha tiver se movido o suficiente (otimização)
-            const dist = Math.hypot(x - lastTrailX, y - lastTrailY);
-            if (dist < 15) return;
-
-            const dot = document.createElement('div');
-            dot.className = 'trail-dot';
-            dot.style.left = `${x}px`;
-            dot.style.top = `${y}px`;
+        // Função para criar uma nova aranha
+        function criarAranha(startX, startY) {
+            const el = document.createElement('div');
+            el.className = 'spider';
             
-            document.body.appendChild(dot);
+            // Estrutura HTML interna da aranha
+            el.innerHTML = `
+                <div class="spider-leg leg-1"></div>
+                <div class="spider-leg leg-2"></div>
+                <div class="spider-leg leg-3"></div>
+                <div class="spider-leg leg-4"></div>
+                <div class="spider-body"></div>
+                <div class="spider-head"></div>
+                <div class="eye eye-left"></div>
+                <div class="eye eye-right"></div>
+            `;
+            
+            document.body.appendChild(el);
 
-            // Animação de sumiço
-            setTimeout(() => {
-                dot.style.transform = 'scale(0.1)';
-                dot.style.opacity = '0';
-            }, 50);
+            // Cada aranha tem uma velocidade ligeiramente diferente
+            const randomSpeed = 0.03 + (Math.random() * 0.04);
 
-            // Remove do DOM após a transição
-            setTimeout(() => {
-                dot.remove();
-            }, 1000);
-
-            lastTrailX = x;
-            lastTrailY = y;
+            const spiderData = {
+                element: el,
+                x: startX,
+                y: startY,
+                prevX: startX, // Usado para desenhar a linha do rastro
+                prevY: startY, // Usado para desenhar a linha do rastro
+                speed: randomSpeed,
+                angle: 0
+            };
+            
+            spiders.push(spiderData);
         }
 
-        function animate() {
-            // Movimento suave (Lerp)
-            spiderX += (mouseX - spiderX) * speed;
-            spiderY += (mouseY - spiderY) * speed;
+        // 1. Cria a primeira aranha no centro do ecrã ao iniciar
+        criarAranha(window.innerWidth / 2, window.innerHeight / 2);
 
-            // Rotação para olhar para o cursor
-            const angle = Math.atan2(mouseY - spiderY, mouseX - spiderX) * 180 / Math.PI;
+        // 2. Evento de clique no ecrã para criar aranhas em locais aleatórios
+        window.addEventListener('click', (e) => {
+            // Se o clique foi no botão de limpar, não cria aranha nova!
+            if (e.target.id === 'btn-limpar') return;
 
-            // Aplicar transformações
-            // O +90 é porque o desenho original da aranha está virado para baixo
-            spider.style.transform = `translate(${spiderX - 20}px, ${spiderY - 22}px) rotate(${angle + 90}deg)`;
+            // Gera coordenadas aleatórias dentro da janela
+            const randomX = Math.random() * window.innerWidth;
+            const randomY = Math.random() * window.innerHeight;
+            
+            criarAranha(randomX, randomY);
+        });
 
-            // Criar rastro na posição atual da aranha
-            createTrail(spiderX, spiderY);
+        // 3. Evento do botão para apagar as aranhas extras
+        document.getElementById('btn-limpar').addEventListener('click', (e) => {
+            // Se houver mais de uma aranha...
+            if (spiders.length > 1) {
+                // Remove os elementos HTML (começando da segunda aranha)
+                for (let i = 1; i < spiders.length; i++) {
+                    spiders[i].element.remove();
+                }
+                // Mantém apenas a primeira aranha na nossa lista
+                spiders.length = 1; 
+            }
+            
+            // Limpa todo o rastro desenhado no canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
 
-            requestAnimationFrame(animate);
+        // Loop de Animação para fazer as aranhas seguirem o rato
+        function animar() {
+            spiders.forEach(spider => {
+                const dx = mouseX - spider.x;
+                const dy = mouseY - spider.y;
+                const dist = Math.hypot(dx, dy);
+
+                // Se a aranha estiver longe do rato, ela anda
+                if (dist > 10) {
+                    // Guarda a posição antes de se mover para criar a linha
+                    spider.prevX = spider.x;
+                    spider.prevY = spider.y;
+
+                    // Move a aranha
+                    spider.x += dx * spider.speed;
+                    spider.y += dy * spider.speed;
+                    
+                    // Desenha o rastro da teia
+                    ctx.beginPath();
+                    ctx.moveTo(spider.prevX, spider.prevY);
+                    ctx.lineTo(spider.x, spider.y);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; // Cor branca semi-transparente para parecer teia
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Calcula a rotação para ela olhar para o rato (soma 90 graus / Math.PI/2)
+                    spider.angle = Math.atan2(dy, dx) + (Math.PI / 2);
+                    
+                    // Adiciona a classe que faz as patas se mexerem
+                    spider.element.classList.add('walking');
+                } else {
+                    // Para as patas quando chega perto
+                    spider.element.classList.remove('walking');
+                }
+
+                // Aplica a posição e a rotação
+                // Subtraímos 20px para centrar o ponto de origem (já que a aranha tem 40x40px)
+                spider.element.style.transform = `translate(${spider.x - 20}px, ${spider.y - 20}px) rotate(${spider.angle}rad)`;
+            });
+
+            // Chama o próximo frame de animação
+            requestAnimationFrame(animar);
         }
 
-        // Inicia
-        animate();
+        // Inicia o loop de animação
+        animar();
     </script>
 </body>
 </html>
